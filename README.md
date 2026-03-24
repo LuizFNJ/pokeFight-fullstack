@@ -10,12 +10,14 @@ This project was developed as a solution to a Fullstack technical challenge. The
 ## 🎯 Challenge Requirements Completed
 
 ### Challenge 1: API Consumption & Interface
+
 - [x] Create a backend API to consume and filter data from the PokeAPI.
 - [x] Create a frontend to display Pokémon cards with their respective images.
 - [x] Build the application without opinionated frameworks like NestJS or Next.js.
 - [x] Implement search filters (by name and type).
 
 ### Challenge 2: Authentication & Database
+
 - [x] Connect the application to a database (MongoDB).
 - [x] Create an authentication system (Registration and Login).
 - [x] Restrict the use of search filters exclusively to logged-in users.
@@ -25,6 +27,7 @@ This project was developed as a solution to a Fullstack technical challenge. The
 ## 🛠️ Technologies Used
 
 **Frontend:**
+
 - React (via Vite)
 - Tailwind CSS v4 (Responsive styling and TCG-like UI)
 - Axios (HTTP requests)
@@ -32,10 +35,15 @@ This project was developed as a solution to a Fullstack technical challenge. The
 - Custom Observer Pattern (Global non-blocking notification system)
 
 **Backend:**
+
 - Node.js with Express (Layered Architecture)
 - MongoDB & Mongoose (Database and Modeling)
 - JWT (JSON Web Tokens for route protection)
 - bcryptjs (Password hashing)
+
+**Tooling:**
+
+- Concurrently (Run fullstack environment with a single command)
 
 ---
 
@@ -44,18 +52,11 @@ This project was developed as a solution to a Fullstack technical challenge. The
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/pokecollector-fullstack.git
+git clone [https://github.com/YOUR_USERNAME/pokecollector-fullstack.git](https://github.com/YOUR_USERNAME/pokecollector-fullstack.git)
 cd pokecollector-fullstack
 ```
 
-### 2. Backend Setup
-
-Open a terminal in the project root and navigate to the backend folder:
-
-```bash
-cd backend
-npm install
-```
+### 2. Create .env
 
 Create a `.env` file inside the `backend` folder with the following variables:
 
@@ -65,26 +66,18 @@ MONGO_URI=mongodb://127.0.0.1:27017/pokeauth
 JWT_SECRET=your_super_secret_jwt_key_here
 ```
 
-Start the server:
+### 3. Install Dependencies & Run
+
+Install all dependencies for the root workspace, backend, and frontend with a single command from the **root folder**:
 
 ```bash
-npm start
-# or "npm run dev" if nodemon is configured
-```
-
-### 3. Frontend Setup
-
-Open a new terminal and navigate to the frontend folder:
-
-```bash
-cd frontend
 npm install
 ```
 
-Start the React application:
+To run in dev mode
 
-```bash
-npm run dev
+```sh
+yarn dev
 ```
 
-Open your browser and navigate to: `http://localhost:5173`
+Access <http://localhost:5173> in your browser.

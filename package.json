@@ -1,0 +1,26 @@
+{
+  "name": "pokepj",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "postinstall": "npm install --prefix backend && npm install --prefix frontend",
+    "dev:backend": "npm run dev --prefix backend",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LuizFNJ/pokeFight-fullstack.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/LuizFNJ/pokeFight-fullstack/issues"
+  },
+  "homepage": "https://github.com/LuizFNJ/pokeFight-fullstack#readme",
+  "description": "",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
