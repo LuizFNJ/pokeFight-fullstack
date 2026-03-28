@@ -3,7 +3,7 @@ import Home from "./Home";
 import Auth from "./Auth";
 import { GlobalMessage } from "./GlobalMessage";
 
-function App() {
+function App(): JSX.Element {
   return (
     <>
       <GlobalMessage />

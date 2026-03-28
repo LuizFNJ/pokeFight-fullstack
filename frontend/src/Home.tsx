@@ -1,8 +1,28 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 
-const typeColors = {
+interface PokemonStats {
+  hp?: number;
+  attack?: number;
+  defense?: number;
+}
+
+interface Pokemon {
+  id: number;
+  name: string;
+  types: string[];
+  image?: string;
+  description: string;
+  stats?: PokemonStats;
+}
+
+interface ApiResponse {
+  data: Pokemon[];
+  totalPages: number;
+}
+
+const typeColors: Record<string, string> = {
   fire: "from-orange-400 to-red-600 border-red-700 text-red-950",
   water: "from-blue-400 to-cyan-600 border-cyan-700 text-cyan-950",
   grass: "from-green-400 to-emerald-600 border-emerald-700 text-emerald-950",
@@ -20,30 +40,30 @@ const typeColors = {
   dragon: "from-indigo-500 to-indigo-700 border-indigo-800 text-indigo-950",
 };
 
-export default function Home() {
-  const [pokemons, setPokemons] = useState([]);
-  const [search, setSearch] = useState("");
-  const [type, setType] = useState("");
+export default function Home(): JSX.Element {
+  const [pokemons, setPokemons] = useState<Pokemon[]>([]);
+  const [search, setSearch] = useState<string>("");
+  const [type, setType] = useState<string>("");
 
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
+  const [page, setPage] = useState<number>(1);
+  const [hasMore, setHasMore] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const navigate = useNavigate();
 
   const isLogged = !!localStorage.getItem("token");
 
-  const handleLogout = () => {
+  const handleLogout = (): void => {
     localStorage.removeItem("token");
     window.location.reload();
   };
 
   const loadPokemons = async (
-    currentSearch,
-    currentType,
-    pageNumber = 1,
-    isLoadMore = false,
-  ) => {
+    currentSearch: string,
+    currentType: string,
+    pageNumber: number = 1,
+    isLoadMore: boolean = false,
+  ): Promise<void> => {
     setIsLoading(true);
     try {
       const token = localStorage.getItem("token");
@@ -51,13 +71,13 @@ export default function Home() {
         ? { headers: { Authorization: `Bearer ${token}` } }
         : {};
 
-      const response = await axios.get(
+      const response = await axios.get<ApiResponse>(
         `http://localhost:3000/api/pokemons?name=${currentSearch.toLowerCase()}&type=${currentType}&page=${pageNumber}&limit=12`,
         config,
       );
 
       if (isLoadMore) {
-        setPokemons((prev) => [...prev, ...response.data.data]);
+        setPokemons((prev: Pokemon[]) => [...prev, ...response.data.data]);
       } else {
         setPokemons(response.data.data);
       }
@@ -65,7 +85,8 @@ export default function Home() {
       setHasMore(pageNumber < response.data.totalPages);
       setPage(pageNumber);
     } catch (error) {
-      if (error.response?.status === 401) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response?.status === 401) {
         handleLogout();
       }
     } finally {
@@ -77,12 +98,12 @@ export default function Home() {
     loadPokemons("", "", 1, false);
   }, []);
 
-  const handleFilter = () => {
+  const handleFilter = (): void => {
     if (!isLogged) return;
     loadPokemons(search, type, 1, false);
   };
 
-  const handleLoadMore = () => {
+  const handleLoadMore = (): void => {
     loadPokemons(search, type, page + 1, true);
   };
 
@@ -133,14 +154,14 @@ export default function Home() {
             disabled={!isLogged}
             className="w-full md:w-80 p-4 rounded-xl border-2 border-gray-700 bg-gray-800 text-white placeholder-gray-500 focus:border-red-500 outline-none transition-all shadow-inner disabled:opacity-50 disabled:cursor-not-allowed"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
           />
 
           <select
             disabled={!isLogged}
             className="w-full md:w-60 p-4 rounded-xl border-2 border-gray-700 bg-gray-800 text-white shadow-inner outline-none focus:border-red-500 capitalize disabled:opacity-50 disabled:cursor-not-allowed"
             value={type}
-            onChange={(e) => setType(e.target.value)}
+            onChange={(e: ChangeEvent<HTMLSelectElement>) => setType(e.target.value)}
           >
             <option value="">All Types</option>
             {Object.keys(typeColors).map((t) => (
@@ -169,7 +190,7 @@ export default function Home() {
       </header>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10 flex-grow">
-        {pokemons.map((pokemon) => {
+        {pokemons.map((pokemon: Pokemon) => {
           const mainType = pokemon.types[0];
           const colorClass = typeColors[mainType] || typeColors.normal;
           const [gradient, border, text] = colorClass.split(" ");
@@ -236,7 +257,7 @@ export default function Home() {
                         <div className="flex-grow bg-gray-700 rounded-full h-2 overflow-hidden border border-gray-600">
                           <div
                             className={`${stat.color} h-2 rounded-full`}
-                            style={{ width: `${(stat.value / 150) * 100}%` }}
+                            style={{ width: `${((stat.value || 0) / 150) * 100}%` }}
                           ></div>
                         </div>
                         <span className="text-xs font-bold text-gray-300 w-8 text-right">
@@ -252,7 +273,7 @@ export default function Home() {
                     #{String(pokemon.id).padStart(3, "0")}
                   </span>
                   <div className="flex gap-2">
-                    {pokemon.types.map((t) => (
+                    {pokemon.types.map((t: string) => (
                       <span
                         key={t}
                         className={`text-xs ${border} bg-white/20 px-3 py-1 rounded-full font-bold uppercase border text-gray-950`}

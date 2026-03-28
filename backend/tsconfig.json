@@ -1,0 +1,12 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "module": "CommonJS",
+    "esModuleInterop": true,
+    "rootDir": "."
+  },
+  "include": ["src/**/*", "controllers/**/*", "routes/**/*", "services/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

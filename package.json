@@ -2,6 +2,7 @@
   "name": "pokepj",
   "version": "1.0.0",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "postinstall": "npm install --prefix backend && npm install --prefix frontend",
     "dev:backend": "npm run dev --prefix backend",
@@ -21,6 +22,13 @@
   "homepage": "https://github.com/LuizFNJ/pokeFight-fullstack#readme",
   "description": "",
   "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^25.5.0",
     "concurrently": "^9.2.1"
+  },
+  "dependencies": {
+    "typescript": "^6.0.2"
   }
 }

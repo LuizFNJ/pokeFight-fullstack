@@ -1,7 +1,7 @@
-const app = require("./app");
-const connectDB = require("./config/db");
+import app from "./app";
+import connectDB from "./config/db";
 
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
 connectDB().then(() => {
   app.listen(PORT, () => {

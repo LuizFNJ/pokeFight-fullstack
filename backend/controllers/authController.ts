@@ -1,8 +1,9 @@
-const User = require("../src/models/User");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
+import type { Request, Response } from "express";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import User from "../src/models/User";
 
-const register = async (req, res) => {
+const register = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
@@ -24,13 +25,12 @@ const register = async (req, res) => {
       userId: newUser._id,
     });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ message: "Server error", error: error.message });
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return res.status(500).json({ message: "Server error", error: message });
   }
 };
 
-const login = async (req, res) => {
+const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
@@ -44,7 +44,12 @@ const login = async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials." });
     }
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      return res.status(500).json({ message: "JWT_SECRET is not set" });
+    }
+
+    const token = jwt.sign({ id: user._id }, secret, {
       expiresIn: "1d",
     });
 
@@ -54,10 +59,9 @@ const login = async (req, res) => {
       email: user.email,
     });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ message: "Server error", error: error.message });
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return res.status(500).json({ message: "Server error", error: message });
   }
 };
 
-module.exports = { register, login };
+export { register, login };

@@ -1,10 +1,11 @@
 {
   "name": "pokepj",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "dist/server.js",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "nodemon src/server.js"
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "dev": "nodemon --watch src --watch controllers --watch routes --watch services --ext ts --exec ts-node src/server.ts"
   },
   "keywords": [],
   "author": "",
@@ -20,6 +21,13 @@
     "mongoose": "^9.3.2"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.18",
+    "@types/express": "^5.0.3",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/node": "^22.15.3",
+    "nodemon": "^3.1.14",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
   }
 }

@@ -1,22 +1,26 @@
-import { useState } from "react";
+import { useState, FormEvent, ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { MessageManager } from "./GlobalMessage";
 
-export default function Auth() {
-  const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+interface LoginResponse {
+  token: string;
+}
+
+export default function Auth(): JSX.Element {
+  const [isLogin, setIsLogin] = useState<boolean>(true);
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [showPassword, setShowPassword] = useState<boolean>(false);
 
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
 
     try {
       if (isLogin) {
-        const response = await axios.post(
+        const response = await axios.post<LoginResponse>(
           "http://localhost:3000/api/auth/login",
           {
             email,
@@ -33,7 +37,7 @@ export default function Auth() {
           password,
         });
 
-        const loginResponse = await axios.post(
+        const loginResponse = await axios.post<LoginResponse>(
           "http://localhost:3000/api/auth/login",
           {
             email,
@@ -50,12 +54,14 @@ export default function Auth() {
       }
     } catch (err) {
       const errorMsg =
-        err.response?.data?.message || "Pokédex connection error";
+        axios.isAxiosError(err) && err.response?.data?.message
+          ? err.response.data.message
+          : "Pokédex connection error";
       MessageManager.showMessage("error", errorMsg);
     }
   };
 
-  const toggleAuthMode = () => {
+  const toggleAuthMode = (): void => {
     setIsLogin(!isLogin);
     setPassword("");
     setShowPassword(false);
@@ -76,7 +82,7 @@ export default function Auth() {
             placeholder="Your best email..."
             className="w-full p-3 sm:p-4 rounded-xl bg-gray-800 text-white border-2 border-gray-700 focus:border-red-500 outline-none transition-colors text-sm sm:text-base"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
             required
           />
 
@@ -86,7 +92,7 @@ export default function Auth() {
               placeholder="Your secret password..."
               className="w-full p-3 sm:p-4 pr-12 rounded-xl bg-gray-800 text-white border-2 border-gray-700 focus:border-red-500 outline-none transition-colors text-sm sm:text-base"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
               required
             />
 
@@ -101,19 +107,14 @@ export default function Auth() {
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
                   viewBox="0 0 24 24"
-                  strokeWidth={2}
+                  strokeWidth={1.5}
                   stroke="currentColor"
-                  className="w-5 h-5 sm:w-6 sm:h-6"
+                  className="w-5 h-5"
                 >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    d="M3.98 8.223A10.477 10.477 0 001.934 12c2.126 5.228 7.343 9 13.066 9 .993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c5.722 0 10.939 3.772 13.063 9a10.477 10.477 0 01-2.045 3.777M15.75 9.75L9.75 15.75M7.5 7.5L15 15"
                   />
                 </svg>
               ) : (
@@ -121,14 +122,14 @@ export default function Auth() {
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
                   viewBox="0 0 24 24"
-                  strokeWidth={2}
+                  strokeWidth={1.5}
                   stroke="currentColor"
-                  className="w-5 h-5 sm:w-6 sm:h-6"
+                  className="w-5 h-5"
                 >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"
+                    d="M12 4.5C7.30558 4.5 3.73101 7.61344 2.45779 12c1.27322 4.38656 4.84779 7.5 9.54221 7.5 4.6944 0 8.269 -3.11344 9.5422 -7.5C20.269 7.61344 16.6944 4.5 12 4.5ZM12 16.5c-2.49264 0 -4.5 -2.00736 -4.5 -4.5c0 -2.49264 2.00736 -4.5 4.5 -4.5c2.4926 0 4.5 2.00736 4.5 4.5C16.5 14.4926 14.4926 16.5 12 16.5Z"
                   />
                 </svg>
               )}
@@ -137,20 +138,23 @@ export default function Auth() {
 
           <button
             type="submit"
-            className="bg-red-600 text-white font-bold p-3 sm:p-4 rounded-xl hover:bg-red-700 transition-colors mt-2 text-base sm:text-lg shadow-md active:scale-95"
+            className="w-full p-3 sm:p-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-colors text-sm sm:text-base"
           >
-            {isLogin ? "Sign In" : "Sign Up and Sign In"}
+            {isLogin ? "Enter Pokédex" : "Become a Researcher"}
           </button>
         </form>
-        <p className="text-gray-400 text-center mt-6 text-sm sm:text-base">
-          {isLogin ? "Don't have an account yet? " : "Already have an account? "}
-          <button
-            onClick={toggleAuthMode}
-            className="text-red-400 font-bold hover:text-red-300 hover:underline transition-colors"
-          >
-            {isLogin ? "Sign up" : "Log in"}
-          </button>
-        </p>
+
+        <div className="mt-6 text-center text-gray-400 text-sm sm:text-base">
+          <p>
+            {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
+            <button
+              onClick={toggleAuthMode}
+              className="text-red-500 hover:text-red-400 font-semibold transition-colors"
+            >
+              {isLogin ? "Sign up here" : "Log in here"}
+            </button>
+          </p>
+        </div>
       </div>
     </div>
   );
