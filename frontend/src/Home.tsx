@@ -1,11 +1,18 @@
 import { useEffect, useState, ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import axios, { AxiosError } from "axios";
+import { BattleArena } from "./BattleArena";
+import { BattleResult } from "./BattleResult";
+import { BattleStats } from "./BattleStats";
+import { BattleLoadingScreen } from "./BattleLoadingScreen";
+import { MessageManager } from "./GlobalMessage";
 
 interface PokemonStats {
   hp?: number;
   attack?: number;
   defense?: number;
+  speed?: number;
 }
 
 interface Pokemon {
@@ -20,6 +27,25 @@ interface Pokemon {
 interface ApiResponse {
   data: Pokemon[];
   totalPages: number;
+}
+
+interface PokemonState {
+  name: string;
+  currentHp: number;
+  maxHp: number;
+  attack: number;
+  defense: number;
+  speed: number;
+  moves: string[];
+  sprite: string;
+}
+
+interface BattleStartResponse {
+  battleId: string;
+  playerPokemon: PokemonState;
+  enemyPokemon: PokemonState;
+  currentTurn: number;
+  matchStatus: string;
 }
 
 const typeColors: Record<string, string> = {
@@ -41,6 +67,7 @@ const typeColors: Record<string, string> = {
 };
 
 export default function Home(): JSX.Element {
+  const { t } = useTranslation();
   const [pokemons, setPokemons] = useState<Pokemon[]>([]);
   const [search, setSearch] = useState<string>("");
   const [type, setType] = useState<string>("");
@@ -48,6 +75,22 @@ export default function Home(): JSX.Element {
   const [page, setPage] = useState<number>(1);
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  const [inBattle, setInBattle] = useState<boolean>(false);
+  const [battleData, setBattleData] = useState<{
+    battleId: string;
+    playerPokemon: PokemonState;
+    enemyPokemon: PokemonState;
+  } | null>(null);
+  const [startingBattle, setStartingBattle] = useState<boolean>(false);
+
+  // Battle stats
+  const [wins, setWins] = useState<number>(0);
+  const [losses, setLosses] = useState<number>(0);
+  const [showBattleResult, setShowBattleResult] = useState<boolean>(false);
+  const [lastBattleWinner, setLastBattleWinner] = useState<"player" | "ai" | null>(null);
+  const [lastPlayerPokemon, setLastPlayerPokemon] = useState<string>("");
+  const [lastEnemyPokemon, setLastEnemyPokemon] = useState<string>("");
 
   const navigate = useNavigate();
 
@@ -95,6 +138,12 @@ export default function Home(): JSX.Element {
   };
 
   useEffect(() => {
+    // Load battle stats from localStorage
+    const savedWins = localStorage.getItem("battleWins");
+    const savedLosses = localStorage.getItem("battleLosses");
+    if (savedWins) setWins(parseInt(savedWins, 10));
+    if (savedLosses) setLosses(parseInt(savedLosses, 10));
+
     loadPokemons("", "", 1, false);
   }, []);
 
@@ -107,8 +156,113 @@ export default function Home(): JSX.Element {
     loadPokemons(search, type, page + 1, true);
   };
 
+  const handleStartBattle = async (pokemonName: string): Promise<void> => {
+    if (!isLogged) {
+      navigate("/auth");
+      return;
+    }
+
+    setStartingBattle(true);
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.post<BattleStartResponse>(
+        "http://localhost:3000/api/battle/start",
+        { playerPokemonName: pokemonName },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      setBattleData({
+        battleId: response.data.battleId,
+        playerPokemon: response.data.playerPokemon,
+        enemyPokemon: response.data.enemyPokemon,
+      });
+
+      setInBattle(true);
+      MessageManager.showMessage(
+        "success",
+        `Battle started! ${pokemonName} vs ${response.data.enemyPokemon.name}!`,
+      );
+    } catch (error) {
+      const errorMsg =
+        axios.isAxiosError(error) && error.response?.data?.error
+          ? error.response.data.error
+          : "Failed to start battle";
+      MessageManager.showMessage("error", errorMsg);
+    } finally {
+      setStartingBattle(false);
+    }
+  };
+
+  const handleBattleEnd = (winner: "player" | "ai", playerPoke: string, enemyPoke: string): void => {
+    setLastBattleWinner(winner);
+    setLastPlayerPokemon(playerPoke);
+    setLastEnemyPokemon(enemyPoke);
+
+    // Update score
+    if (winner === "player") {
+      const newWins = wins + 1;
+      setWins(newWins);
+      localStorage.setItem("battleWins", String(newWins));
+      MessageManager.showMessage("success", `+100 XP! ${t("battle_player_wins")}`);
+    } else {
+      const newLosses = losses + 1;
+      setLosses(newLosses);
+      localStorage.setItem("battleLosses", String(newLosses));
+      MessageManager.showMessage("error", t("battle_player_loses"));
+    }
+
+    // Show result screen (keep inBattle true!)
+    setShowBattleResult(true);
+  };
+
+  const handleResultContinue = (): void => {
+    setShowBattleResult(false);
+    setInBattle(false);
+    setBattleData(null);
+    setLastBattleWinner(null);
+    setLastPlayerPokemon("");
+    setLastEnemyPokemon("");
+  };
+
+  if (inBattle && battleData && !showBattleResult) {
+    return (
+      <>
+        {startingBattle && <BattleLoadingScreen />}
+        <BattleArena
+          battleId={battleData.battleId}
+          playerPokemon={battleData.playerPokemon}
+          enemyPokemon={battleData.enemyPokemon}
+          onBattleEnd={handleBattleEnd}
+          playerName={battleData.playerPokemon.name}
+          enemyName={battleData.enemyPokemon.name}
+        />
+      </>
+    );
+  }
+
+  if (inBattle && showBattleResult && lastBattleWinner) {
+    return (
+      <BattleResult
+        isVictory={lastBattleWinner === "player"}
+        playerPokemonName={lastPlayerPokemon}
+        enemyPokemonName={lastEnemyPokemon}
+        onContinue={handleResultContinue}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen p-8 bg-gray-950 text-gray-100 font-sans flex flex-col">
+      {/* Battle Stats */}
+      <div className="max-w-7xl mx-auto w-full mb-8">
+        <BattleStats wins={wins} losses={losses} />
+      </div>
+
       <nav className="flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0 mb-8 sm:mb-12 max-w-7xl mx-auto w-full border-b border-gray-800 pb-6 text-center sm:text-left">
         <h1 className="text-3xl sm:text-4xl font-extrabold text-red-500 drop-shadow-[0_2px_10px_rgba(239,68,68,0.5)]">
           Poke<span className="text-white">Collector</span>
@@ -118,13 +272,13 @@ export default function Home(): JSX.Element {
           {isLogged ? (
             <div className="flex items-center gap-4">
               <span className="text-sm font-bold text-gray-400 hidden md:block">
-                Logged-in Researcher
+                {t("common_success")}
               </span>
               <button
                 onClick={handleLogout}
                 className="bg-gray-800 border border-gray-700 text-white px-6 py-2 rounded-xl font-bold hover:bg-red-600 transition-colors text-sm sm:text-base"
               >
-                Log out
+                {t("nav_logout")}
               </button>
             </div>
           ) : (
@@ -133,13 +287,13 @@ export default function Home(): JSX.Element {
                 onClick={() => navigate("/auth")}
                 className="text-gray-300 font-bold hover:text-white transition-colors text-sm sm:text-base px-4 py-2"
               >
-                Login
+                  {t("nav_login")}
               </button>
               <button
                 onClick={() => navigate("/auth")}
                 className="bg-red-600 text-white px-4 sm:px-6 py-2 rounded-xl font-bold hover:bg-red-700 transition-colors shadow-md text-sm sm:text-base flex-1 sm:flex-none"
               >
-                Sign up
+                  {t("nav_register")}
               </button>
             </div>
           )}
@@ -150,7 +304,7 @@ export default function Home(): JSX.Element {
         <div className="flex flex-col md:flex-row justify-center items-center gap-4 p-6 bg-gray-900 rounded-3xl shadow-2xl border border-gray-800 max-w-4xl mx-auto">
           <input
             type="text"
-            placeholder="Pikachu, Charizard..."
+            placeholder={t("battle_choose_pokemon")}
             disabled={!isLogged}
             className="w-full md:w-80 p-4 rounded-xl border-2 border-gray-700 bg-gray-800 text-white placeholder-gray-500 focus:border-red-500 outline-none transition-all shadow-inner disabled:opacity-50 disabled:cursor-not-allowed"
             value={search}
@@ -163,7 +317,7 @@ export default function Home(): JSX.Element {
             value={type}
             onChange={(e: ChangeEvent<HTMLSelectElement>) => setType(e.target.value)}
           >
-            <option value="">All Types</option>
+            <option value="">{t("common_select")} {t("pokemon_type")}</option>
             {Object.keys(typeColors).map((t) => (
               <option key={t} value={t} className="capitalize">
                 {t}
@@ -177,12 +331,12 @@ export default function Home(): JSX.Element {
               disabled={!isLogged || isLoading}
               className="w-full bg-red-600 text-white px-10 py-4 rounded-xl font-bold hover:bg-red-700 transition-all shadow-md active:scale-95 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading && page === 1 ? "Searching..." : "Filter Collection"}
+              {isLoading && page === 1 ? t("common_loading") : t("battle_start")}
             </button>
 
             {!isLogged && (
               <div className="absolute bottom-full mb-4 hidden group-hover:block w-max bg-red-950 border border-red-500 text-white text-xs font-bold px-4 py-3 rounded-lg shadow-2xl z-50 before:content-[''] before:absolute before:top-full before:left-1/2 before:-translate-x-1/2 before:border-8 before:border-transparent before:border-t-red-500">
-                Only logged-in researchers can use the filters.
+                {t("common_error")} - {t("nav_login")}
               </div>
             )}
           </div>
@@ -268,7 +422,7 @@ export default function Home(): JSX.Element {
                   </div>
                 </div>
 
-                <div className="flex justify-between items-center mt-auto">
+                <div className="flex justify-between items-center gap-2">
                   <span className="text-sm font-bold text-gray-950/70">
                     #{String(pokemon.id).padStart(3, "0")}
                   </span>
@@ -283,6 +437,14 @@ export default function Home(): JSX.Element {
                     ))}
                   </div>
                 </div>
+
+                <button
+                  onClick={() => handleStartBattle(pokemon.name)}
+                  disabled={!isLogged || startingBattle}
+                  className="mt-4 w-full bg-yellow-500 hover:bg-yellow-400 text-gray-950 px-4 py-2 rounded-xl font-bold transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                >
+                  {startingBattle ? "⚔️ " + t("common_loading") : "⚔️ " + t("battle_start")}
+                </button>
               </div>
             </div>
           );
@@ -296,14 +458,14 @@ export default function Home(): JSX.Element {
             disabled={isLoading}
             className="bg-transparent border-2 border-red-600 text-red-500 px-12 py-4 rounded-xl font-bold hover:bg-red-600 hover:text-white transition-all shadow-md active:scale-95 text-xl disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? "Searching..." : "Load More"}
+            {isLoading ? t("common_loading") : t("common_next")}
           </button>
         </div>
       )}
 
       {!hasMore && pokemons.length > 0 && (
         <div className="mt-12 text-center text-gray-500 font-bold pb-8">
-          You've captured all results!
+          {t("common_success")} - {t("pokemon_level")}
         </div>
       )}
     </div>

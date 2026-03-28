@@ -1,7 +1,12 @@
 import jwt, { JwtPayload } from "jsonwebtoken";
 import type { NextFunction, Request, Response } from "express";
 
-type AuthRequest = Request & { user?: string | JwtPayload };
+interface AuthJwtPayload extends JwtPayload {
+  userId?: string;
+  id?: string;
+}
+
+type AuthRequest = Request & { user?: AuthJwtPayload; userId?: string };
 
 const verifyToken = (req: AuthRequest, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
@@ -17,8 +22,9 @@ const verifyToken = (req: AuthRequest, res: Response, next: NextFunction) => {
   }
 
   try {
-    const decoded = jwt.verify(token, secret);
+    const decoded = jwt.verify(token, secret) as AuthJwtPayload;
     req.user = decoded;
+    req.userId = decoded.userId || decoded.id || (decoded as any)._id;
     next();
   } catch (error) {
     return res.status(401).json({ message: "Invalid or expired token" });
