@@ -1,5 +1,6 @@
 import { useState, FormEvent, ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import axios from "axios";
 import { MessageManager } from "./GlobalMessage";
 
@@ -8,6 +9,7 @@ interface LoginResponse {
 }
 
 export default function Auth(): JSX.Element {
+  const { t } = useTranslation();
   const [isLogin, setIsLogin] = useState<boolean>(true);
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
@@ -74,12 +76,12 @@ export default function Auth(): JSX.Element {
           Poke<span className="text-white">Collector</span>
         </h2>
         <h3 className="text-lg sm:text-xl text-white font-bold mb-6 text-center">
-          {isLogin ? "Access your Pokédex" : "Become a Researcher"}
+          {isLogin ? t("auth_sign_in") : t("auth_sign_up")}
         </h3>
         <form onSubmit={handleSubmit} className="flex flex-col gap-3 sm:gap-4">
           <input
             type="email"
-            placeholder="Your best email..."
+            placeholder={t("auth_email")}
             className="w-full p-3 sm:p-4 rounded-xl bg-gray-800 text-white border-2 border-gray-700 focus:border-red-500 outline-none transition-colors text-sm sm:text-base"
             value={email}
             onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
@@ -89,7 +91,7 @@ export default function Auth(): JSX.Element {
           <div className="relative w-full">
             <input
               type={showPassword ? "text" : "password"}
-              placeholder="Your secret password..."
+              placeholder={t("auth_password")}
               className="w-full p-3 sm:p-4 pr-12 rounded-xl bg-gray-800 text-white border-2 border-gray-700 focus:border-red-500 outline-none transition-colors text-sm sm:text-base"
               value={password}
               onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
@@ -140,18 +142,18 @@ export default function Auth(): JSX.Element {
             type="submit"
             className="w-full p-3 sm:p-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-colors text-sm sm:text-base"
           >
-            {isLogin ? "Enter Pokédex" : "Become a Researcher"}
+            {isLogin ? t("auth_login_button") : t("auth_register_button")}
           </button>
         </form>
 
         <div className="mt-6 text-center text-gray-400 text-sm sm:text-base">
           <p>
-            {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
+            {isLogin ? t("auth_no_account") : t("auth_have_account")}{" "}
             <button
               onClick={toggleAuthMode}
               className="text-red-500 hover:text-red-400 font-semibold transition-colors"
             >
-              {isLogin ? "Sign up here" : "Log in here"}
+              {isLogin ? t("auth_sign_up") : t("auth_sign_in")}
             </button>
           </p>
         </div>
